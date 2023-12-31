@@ -2,6 +2,7 @@
 #include <queue>
 #include <unordered_map>
 #include <map>
+#include <algorithm>
 using namespace std;
 
 struct CTNode {
@@ -38,7 +39,7 @@ class CompressedTrie {
         RecTrace dbg;
         using nodeptr = CTNode*;
         CTNode* head;
-        int words;
+        int wordCount;
         CTNode* split(CTNode* x, string word, string newWord, int i, int j) {
             string newkey = x->key.substr(0, j);
             string rest = x->key.substr(i);
@@ -74,14 +75,14 @@ class CompressedTrie {
             dbg.onExit("returning " + x->key);
             return x;
         }
-        void preorder(nodeptr h, string& sofar) {
+        void traverse(nodeptr h, string& sofar) {
             if (h == nullptr) return;
             string curr = sofar + h->key;
             if (h->next.empty()) {
                 cout<<curr<<endl;
             } else {
                 for (auto child : h->next) {
-                    preorder(child.second, curr);
+                    traverse(child.second, curr);
                 }
             }
         }
@@ -89,8 +90,12 @@ class CompressedTrie {
             if (node == nullptr)
                 return node;
             dbg.onEnter("Enter node " + node->key + " with key + " + key);
-            if (node->key == key) {
-                return nullptr;
+            if (node->key == key && node->next.empty()) {
+                wordCount--;
+                nodeptr tmp = node;
+                node = nullptr;
+                delete tmp;
+                return node;
             }
             int i = node->key.length();
             string remainder = key.substr(i);
@@ -101,11 +106,11 @@ class CompressedTrie {
     public:
         CompressedTrie() {
             head = new CTNode("#");
-            words = 0;
+            wordCount = 0;
         }      
         void insert(string word) {
             head->next[word[0]] = insert(head->next[word[0]], word);
-            words++;
+            wordCount++;
         }
         void erase(string str) {
             head->next[str[0]] = erase(head->next[str[0]], str, "");
@@ -136,7 +141,7 @@ class CompressedTrie {
         void traverse() {
             for (auto p : head->next) {
                 string str = "";
-                preorder(p.second, str);
+                traverse(p.second, str);
             }
         }
         CTNode* letter(char c) {
@@ -156,7 +161,6 @@ void levelorder(CTNode* h) {
         cout<<"[ ";
         while (nc > 0) {
             CTNode* curr = fq.front();
-            
             fq.pop();
             nc--;
             if (curr != nullptr) {
@@ -174,19 +178,22 @@ void levelorder(CTNode* h) {
 
 int main() {
     CompressedTrie trie;
-    vector<string> words = /*{"test","slow","water",
-     "mushroom", "pasta", "privacy", "marinara", "primaveras", "zombie", "marijuana", "zoology",
-   */
-  {"romane", "romanus", "romulus","rubens", "rubicon", "ruber", "rubicundus"}; 
+    vector<string> words = {"test","slow","water", "paste", "patsy", "kinetic", "kinedness", "kindred", "atmospher", "karmin","mushy", "high", "hyper", "hypothesis", "hexagon", "hackers",
+     "mushroom", "pasta", "privacy", "marinara", "primaveras", "zombie", "marijuana", "zoology", "rotating", "minuites", "storm", "thirty",
+   "romane", "romanus", "romulus","rubens", "rubicon", "ruber", "rubicundus", "not", "mostly", "verily", "virgins", "virgo", "vagina",
+  "nothing","no", "nottingham", "noise", "nike", "nickname", "alpine", "arizone", "alaska", "cannabis", "camphor", "carribean", "namaste", "scatology", "nowhere", "team", "terminate", "nightmares", "simmer", "science", "winter", "waste"}; 
+    random_shuffle(words.begin(), words.end());
     for (string s : words) {
         cout<<"insert: "<<s<<endl;
         trie.insert(s);
         levelorder(trie.get());
         cout<<"--------------"<<endl;
     }
-    for (string s : words) {
+   // trie.traverse();
+  /*  for (string s : words) {
+        cout<<"Erase: "<<s<<endl;
         trie.erase(s);
-        levelorder(trie.get());
-    }
+        trie.traverse();
+    }*/
     return 0;
 }
